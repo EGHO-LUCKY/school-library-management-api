@@ -1,0 +1,24 @@
+{
+  "name": "school-library-management-api",
+  "version": "1.0.0",
+  "description": "A School Library management server",
+  "homepage": "https://github.com/EGHO-LUCKY/school-library-management-api#readme",
+  "bugs": {
+    "url": "https://github.com/EGHO-LUCKY/school-library-management-api/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EGHO-LUCKY/school-library-management-api.git"
+  },
+  "license": "ISC",
+  "author": "Lucky Egho",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  }
+}
