@@ -1,7 +1,6 @@
 const Book = require('../models/book');
 const Author = require('../models/author');
-const Student = require('../models/student');
-const Attendant = require('../models/libraryAttendant');
+const User = require('../models/user');
 const { Types } = require('mongoose');
 const ISBN = require("isbn3");
 const validate = require('../middleware/validate');
@@ -134,17 +133,23 @@ const borrowBook = async (req, res) => {
         .json({ message: `Invalid Attendant ID: ${attendantId}`});
 
     try {
-        const student = await Student.findById(studentId);
+        const student = await User.findById(studentId);
         if (!student) return res.status(404)
-            .json({ message: `Student with ID: ${studentId} not found.`})
+            .json({ message: `Student with ID: ${studentId} not found.`});
 
-        const attendant = await Attendant.findById(attendantId);
+        if (student.role !== "student") return res.status(400)
+            .json({ message: `ID: ${studentId} is not a student.`});
+
+        const attendant = await User.findById(attendantId);
         if (!attendant) return res.status(404)
             .json({ message: `Attendant with ID: ${attendantId} not found.`});
 
+        if (attendant.role !== "attendant") return res.status(400)
+            .json({ message: `ID: ${attendantId} is not an Attendant`});
+
         const book = await Book.findById(req.params.id);
         if (!book) return res.status(404)
-            .json({ message: `Book with ID: ${id} Not Found.`});
+            .json({ message: `Book with ID: ${req.params.id} Not Found.`});
 
         if (book.status === "OUT") return res.json({ message: "Book has been borrowed"});
 
@@ -168,7 +173,7 @@ const returnBook = async (req, res) => {
     try {
         const id = req.params.id;
         
-        const book = await Book.findById(id);
+        const book = await Book.findById(id).populate("authors");
         if (!book) return res.status(404)
             .json({ message: `Book with ID: ${id} not found.`});
 
