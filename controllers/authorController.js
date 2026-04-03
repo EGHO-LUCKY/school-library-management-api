@@ -1,5 +1,4 @@
 const Author = require('../models/author');
-const { Types } = require('mongoose');
 
 const createAuthor = async (req, res) => {
     const { name, bio } = req.body;
