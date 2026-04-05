@@ -7,7 +7,7 @@ const createAuthor = async (req, res) => {
     const author = { name, bio }
     
     try {
-        await Author.create(author);
+        (await Author.create(author));
     
         return res.status(201).json({message: "Author Created Successfully", author: author});
 

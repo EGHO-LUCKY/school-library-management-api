@@ -1,8 +1,7 @@
 const Book = require('../models/book');
-const Author = require('../models/author');
 const User = require('../models/user');
+const Author = require('../models/author');
 const { Types } = require('mongoose');
-const ISBN = require("isbn3");
 const validate = require('../middleware/validate');
 
 const createBook = async (req, res) => {
@@ -12,25 +11,27 @@ const createBook = async (req, res) => {
         .json({message: "Missing fields"});
 
     // VALIDATE ISBN
-    if (!ISBN.parse(isbn)) return res.status(400)
+    const cleanISBN = validate.validateISBN(isbn);
+    if (!cleanISBN) return res.status(400)
         .json({message: "Invalid isbn number"});
-
+    
     // AUTHORS VALIDATION
     if (!Array.isArray(authors)) return res.status(400)
         .json({message: "Authors must be an array"});
-
+            
     if (authors.length === 0) return res.status(400)
         .json({message: "Authors must be a non empty array"});
-
+            
     if (!authors.every(Id => Types.ObjectId.isValid(Id))) return res.status(400)
         .json({message: "One or More invalid Author Id"});
-
+            
     const count = await Author.countDocuments({
         _id: { $in: authors }
     });
-
+            
     if (count !== authors.length) return res.status(404)
         .json({ message: "One or more authors not found" });
+
 
     try {
         const existingBook = await Book.findOne({isbn});
@@ -39,7 +40,7 @@ const createBook = async (req, res) => {
 
         const book = await Book.create({
             title,
-            isbn,
+            isbn: cleanISBN,
             authors
         });
     
@@ -47,7 +48,7 @@ const createBook = async (req, res) => {
 
     } catch(err) {
         console.log(err.message);
-        return res.status(500).json({ message: "Unable to create book. Please try again" });
+        return res.status(500).json({ message: "Unable to create book. Please ensure ISBN is unique." });
     }
 }
 
@@ -84,8 +85,33 @@ const updateBookById = async (req, res) => {
     const { title, isbn, authors } = req.body;
     const update = {};
     if (title !== undefined) update.title = title;
-    if (isbn !== undefined) update.isbn = isbn;
-    if (authors !== undefined) update.authors = authors;
+    if (isbn !== undefined) {
+        // VALIDATE ISBN
+        const cleanISBN = validate.validateISBN(isbn);
+        if (!cleanISBN) return res.status(400)
+            .json({message: "Invalid isbn number"});
+
+        update.isbn = cleanISBN;
+    }
+    if (authors !== undefined) {
+            if (!Array.isArray(authors)) return res.status(400)
+                    .json({message: "Authors must be an array"});
+            
+            if (authors.length === 0) return res.status(400)
+                    .json({message: "Authors must be a non empty array"});
+            
+            if (!authors.every(Id => Types.ObjectId.isValid(Id))) return res.status(400)
+                    .json({message: "One or More invalid Author Id"});
+            
+            const count = await Author.countDocuments({
+                    _id: { $in: authors }
+            });
+            
+            if (count !== authors.length) return res.status(404)
+                    .json({ message: "One or more authors not found" });
+
+        update.authors = authors;
+    }
 
     try {
         const updatedBook = await Book.findByIdAndUpdate(
@@ -101,7 +127,7 @@ const updateBookById = async (req, res) => {
 
     } catch (err) {
         console.log(err.message);
-        return res.status(500).json({ message: "Unable to update Book. Please try again." });
+        return res.status(500).json({ message: "Unable to update Book. Please ensure ISBN is unique." });
     }
 
 }
@@ -146,6 +172,12 @@ const borrowBook = async (req, res) => {
 
         if (attendant.role !== "attendant") return res.status(400)
             .json({ message: `ID: ${attendantId} is not an Attendant`});
+
+        // console.log("Attendant id input:", attendant._id);
+        // console.log("Logged in Attendan:", req.user.id);
+
+        if (!attendant._id.equals(req.user.id)) return res.status(400)
+            .json({ message: "Attendant ID must be same as that of the logged in attendant." });
 
         const book = await Book.findById(req.params.id);
         if (!book) return res.status(404)
