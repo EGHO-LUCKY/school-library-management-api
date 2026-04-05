@@ -1,5 +1,6 @@
 const { Types } = require('mongoose');
 
+
 const isValidId = (id) => {
         if (!Types.ObjectId.isValid(id)) return false
         return true
@@ -44,8 +45,45 @@ const validateDate = (req, res, next) => {
         next();
 }
 
+const validateISBN = (isbn) => {
+        // Remove hyphens and spaces
+        const clean = isbn.replace(/[-\s]/g, '');
+
+        // ISBN-10 validation
+        if (/^\d{9}[\dX]$/.test(clean)) {
+                // let sum = 0;
+
+                // for (let i = 0; i < 10; i++) {
+                //         let digit = clean[i] === 'X' ? 10 : Number(clean[i]);
+                //         sum += digit * (i + 1);
+                // }
+                
+                
+                // if (sum % 11 === 0) return clean;
+                return clean
+        }
+
+        // ISBN-13 validation
+        if (/^\d{13}$/.test(clean)) {
+                // let sum = 0;
+                
+                // for (let i = 0; i < 12; i++) {
+                //         let digit = Number(clean[i]);
+                //         sum += (i % 2 === 0) ? digit : digit * 3;
+                // }
+                
+                // let checkDigit = (10 - (sum % 10)) % 10;
+                // if (checkDigit === Number(clean[12])) return clean;
+                return clean
+        }
+
+        return false;
+}
+
+
   module.exports = {
           isValidId,
           validateId,
-          validateDate
-  }
+          validateDate,
+          validateISBN
+}
