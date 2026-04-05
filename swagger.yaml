@@ -1,0 +1,883 @@
+openapi: 3.0.0
+info:
+  title: School Library Management API
+  description: A System that helps in managing event records in the Library.
+  version: 1.0.0
+  contact: 
+    name: Lucky Egho (MD)
+    email: egholucky1@gmail.com
+
+servers:
+  - url: https://school-library-management-api.onrender.com/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Local server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        userId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: ['admin', 'attendant', 'student']
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      example:
+        _id: 69d1c771509066958f7af683
+        userId: STU123456
+        name: Lucky Egho
+        email: luckyegho@gmail.com
+        role: student | attendant | admin
+        createdAt: "2026-04-05T13:39:28.237Z"
+        updatedAt: "2026-04-05T13:39:28.237Z"
+    
+    Author:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        bio:
+          type: string
+        createdAt:
+          type: string
+      example:
+        _id: 69d1c771509066958f7af683
+        name: Lucky Egho
+        bio: I'm a Medical Doctor, backend engineer and a writer.
+        createdAt: "2026-04-05T13:39:28.237Z"
+
+    Book:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 69c594d2d7851865dee1a647
+        title:
+          type: string
+          example: Tales of a Medical Doctor
+        isbn:
+          type: string
+          example: 978-0-306-40615-7
+        authors:
+          type: array
+          items:
+            $ref: "#/components/schemas/Author"
+        status:
+          type: string
+          enum: ['IN', 'OUT']
+        borrowedBy:
+          type: string
+          example: null
+        issuedBy:
+          type: string
+          example: null
+        returnDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Error message
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: Register users
+      security: []
+      tags:
+        - Registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+              example:
+                name: Lucky Egho
+                email: luckyegho@gmail.com
+                password: password
+                role: student
+                  
+      responses:
+        201:
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User Created successfully
+                  user:
+                    $ref: "#/components/schemas/User"
+
+        400:
+            description: Failed user registration
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+  /auth/login:
+    post:
+      summary: Logs in user
+      security: []
+      tags:
+        - Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              example:
+                email: luckyegho@gmail.com
+                password: password
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Login successful
+                  user:
+                    $ref: "#/components/schemas/User"
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2VlNDhkMmNjODI3NDNjNWNmNTJmOCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3NTM5OTczOCwiZXhwIjoxNzc1NDA2OTM4fQ.7ZI8jXwLv8mMglJPvxvcLOOWdW8_FpX4r9LTH7R-kv8
+
+        400:
+            description: Failed user login
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+  /attendants:
+    get:
+      summary: Gets all attendants (Admin role only)
+      tags: 
+        - Attendants
+      description: Returns an array of attendants
+      responses:
+        200:
+          description: Array of all attendants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attendants: 
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+  /attendants/{id}:
+    get:
+      summary: Gets an attendant by id (Admin role only)
+      tags:
+        - Attendants
+      description: Gets an attendant by id
+      parameters:
+        - in: path
+          name: id
+          example: 69c58b24efa8d903ed3aff03
+          required: true
+          schema:
+            type: string
+          description: Attendant id
+      responses:
+        200:
+          description: Returns Attendant with current id
+          content:
+            application/json:
+              schema:
+                properties:
+                  attendant:
+                    $ref: "#/components/schemas/User"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+  
+  /students:
+    get:
+      summary: Gets all students (Admin and Attendant roles only)
+      tags: 
+        - Students
+      description: Returns an array of students
+      responses:
+        200:
+          description: Array of all students
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  students: 
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+  /students/{id}:
+    get:
+      summary: Gets a student by id (Admin and Attendant roles only)
+      tags:
+        - Students
+      description: Gets a student by id
+      parameters:
+        - in: path
+          name: id
+          example: 69c58b24efa8d903ed3aff03
+          required: true
+          schema:
+            type: string
+          description: Student id
+      responses:
+        200:
+          description: Returns Student with current id
+          content:
+            application/json:
+              schema:
+                properties:
+                  student:
+                    $ref: "#/components/schemas/User"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+  
+  /authors:
+    post:
+      summary: Creates an author (Admin role only)
+      tags:
+        - Authors
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - bio
+              properties:
+                name:
+                  type: string
+                bio:
+                  type: string
+              example:
+                name: Lucky Egho
+                bio: An avid reader, researcher and a Medical Doctor
+
+      responses:
+        200:
+          description: Author creation successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Author created successfully
+                  author: 
+                    $ref: "#/components/schemas/Author"
+                    
+        400:
+            description: Bad Request
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+    get:
+      summary: Gets all authors (Admin role only)
+      tags: 
+        - Authors
+      description: Returns an array of authors
+      responses:
+        200:
+          description: Array of all authors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authors: 
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Author"
+
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+  /authors/{id}:
+    get:
+      summary: Gets an author by id (Admin role only)
+      tags:
+        - Authors
+      description: Gets an author by id
+      parameters:
+        - in: path
+          name: id
+          example: 69c58b24efa8d903ed3aff03
+          required: true
+          schema:
+            type: string
+          description: Author id
+      responses:
+        200:
+          description: Returns Author with current id
+          content:
+            application/json:
+              schema:
+                properties:
+                  author:
+                    $ref: "#/components/schemas/Author"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+    
+    put:
+      summary: Updates an author by id (Admin role only)
+      tags:
+        - Authors
+      description: Updates an author by id
+      parameters:
+        - in: path
+          name: id
+          example: 69c58b24efa8d903ed3aff03
+          required: true
+          schema:
+            type: string
+          description: Author id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                bio:
+                  type: string
+              example:
+                name: Lucky Egho
+                bio: An avid reader, researcher and a Medical Doctor
+
+      responses:
+        200:
+          description: Returns Updated Author with current id
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    example: Updated successfully
+                  Book:
+                    $ref: "#/components/schemas/Author"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+    
+    delete:
+      summary: Deletes an author by id (Admin role only)
+      tags:
+        - Authors
+      description: Deletes an author by id
+      parameters:
+        - in: path
+          name: id
+          example: 69c58b24efa8d903ed3aff03
+          required: true
+          schema:
+            type: string
+          description: author id
+      responses:
+        200:
+          description: Returns Deleted author with current id
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    example: Deleted successfully
+                  Book:
+                    $ref: "#/components/schemas/Author"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+  /books:
+    post:
+      summary: Creates a book
+      tags:
+        - Books
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - isbn
+                - authors
+              properties:
+                title:
+                  type: string
+                isbn:
+                  type: string
+                authors:
+                  type: array
+                  items:
+                    type: string
+              example:
+                title: Life of a Medical Doctor
+                isbn: 979-978-990-646-8
+                authors: ["69c58b24efa8d903ed3aff03"]
+      responses:
+        200:
+          description: Book creation successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Book created successfully
+                  book: 
+                    $ref: "#/components/schemas/Book"
+                    
+        400:
+            description: Bad Request
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+    get:
+      summary: Get all books
+      tags: 
+        - Books
+      description: Returns an array of books
+      responses:
+        200:
+          description: Array of all books
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  books: 
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Book"
+
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+  /books/{id}:
+    get:
+      summary: Gets a book by id
+      tags:
+        - Books
+      description: Gets book by id
+      parameters:
+        - in: path
+          name: id
+          example: 69c58b24efa8d903ed3aff03
+          required: true
+          schema:
+            type: string
+          description: Book id
+      responses:
+        200:
+          description: Returns Book with current id
+          content:
+            application/json:
+              schema:
+                properties:
+                  book:
+                    $ref: "#/components/schemas/Book"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+    
+    put:
+      summary: Updates a book by id (Admin role only)
+      tags:
+        - Books
+      description: Updates book by id
+      parameters:
+        - in: path
+          name: id
+          example: 69c58b24efa8d903ed3aff03
+          required: true
+          schema:
+            type: string
+          description: Book id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                isbn:
+                  type: string
+                authors:
+                  type: array
+                  items:
+                    type: string
+              example:
+                title: Life of a Medical Doctor
+                isbn: 979-978-990-646-8
+                authors: ["69c58b24efa8d903ed3aff03"]
+
+      responses:
+        200:
+          description: Returns Updated Book with current id
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    example: Updated successfully
+                  Book:
+                    $ref: "#/components/schemas/Book"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+    
+    delete:
+      summary: Deletes a book by id (Admin role only)
+      tags:
+        - Books
+      description: Deletes book by id
+      parameters:
+        - in: path
+          name: id
+          example: 69c58b24efa8d903ed3aff03
+          required: true
+          schema:
+            type: string
+          description: Book id
+      responses:
+        200:
+          description: Returns Deleted Book with current id
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    example: Deleted successfully
+                  Book:
+                    $ref: "#/components/schemas/Book"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+  /books/{id}/borrow:
+    post:
+      summary: Gives book to student (Attendant role only)
+      tags:
+        - Books
+      description: Gives a student the requested book if available. Attendant id must be the same as the id of the logged in attendant.
+      parameters:
+        - in: path
+          name: id
+          example: 69c58b24efa8d903ed3aff03
+          required: true
+          schema:
+            type: string
+          description: Book id
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                studentId:
+                  type: string
+                  example: 69c58b24efa8d903ed3aff03
+                attendantId:
+                  type: string
+                  example: 69c58b24efa8d903ed3aff04
+                returnDate:
+                  type: string
+                  format: date-time
+                  example: "2026-06-01"
+      
+      responses:
+        200:
+          description: Book successfully borrowed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Borrowed successfully
+                  book:
+                    $ref: "#/components/schemas/Book"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
+  /books/{id}/return:
+    post:
+      summary: Returns book to Library (Attendant role only)
+      tags:
+        - Books
+      description: Collects book from a student and returns it to the Library.
+      parameters:
+        - in: path
+          name: id
+          example: 69c58b24efa8d903ed3aff03
+          required: true
+          schema:
+            type: string
+          description: Book id
+
+      responses:
+        200:
+          description: Book returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Book returned successfully
+                  book:
+                    $ref: "#/components/schemas/Book"
+                    
+        401:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+                    
+        404:
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Error"
+
