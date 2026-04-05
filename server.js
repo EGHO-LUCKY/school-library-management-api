@@ -3,8 +3,8 @@ const express = require('express');
 const authorRoute = require('./routes/authorRoute');
 const bookRoute = require('./routes/bookRoute');
 const userRoute = require('./routes/userRoute');
-const studentRoute = require('./routes/studentRoute');
-const attendantRoute = require('./routes/attendantRoute');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
 
 // INITIALIZE EXPRESS APP
 const app = express();
@@ -17,12 +17,16 @@ app.use(express.urlencoded({ extended: true }));
 const connectDB = require('./config/db');
 connectDB();
 
+// LOAD YAML DOCUMENT
+const swaggerDocument = YAML.load('./swagger.yaml');
+
+// SERVE SWAGGER UI
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 // REGISTER ROUTES
-app.use('/api/auth', userRoute);
+app.use('/api/', userRoute);
 app.use('/api', authorRoute);
 app.use('/api', bookRoute);
-app.use('/api', studentRoute);
-app.use('/api', attendantRoute);
 
 // ROUTE
 app.get('/', (req, res) => {
