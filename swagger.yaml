@@ -555,7 +555,7 @@ paths:
 
   /books:
     post:
-      summary: Creates a book
+      summary: Creates a book (Admin role only)
       tags:
         - Books
       requestBody:
